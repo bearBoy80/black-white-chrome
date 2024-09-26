@@ -1,15 +1,19 @@
 var states = {
 	active: {
 		icons: {
-			'19': 'icon-color-19.png',
-			'38': 'icon-color-38.png'
+			'16': 'icon-color-16.png',
+			'32': 'icon-color-32.png',
+			'48': 'icon-color-48.png',
+			'128': 'icon-color-128.png'
 		},
 		title: 'Turn black and white mode off'
 	},
 	inactive: {
 		icons: {
-			'19': 'icon-bw-19.png',
-			'38': 'icon-bw-38.png'
+			'16': 'icon-bw-16.png',
+			'32': 'icon-bw-32.png',
+			'48': 'icon-bw-48.png',
+			'128': 'icon-bw-128.png'
 		},
 		title: 'Turn black and white mode on'
 	}
@@ -29,27 +33,72 @@ function setActive(activate, tabId) {
 	var props = activate ? states.active : states.inactive;
 	chrome.action.setIcon({ path: props.icons, tabId: tabId });
 	chrome.action.setTitle({ title: props.title, tabId: tabId });
-	chrome.scripting.executeScript({ 
-		target: { tabId: tabId, allFrames: true }, 
-		func: activate ? activateBlackAndWhiteMode : deactivateBlackAndWhiteMode
-	}, (results) => {
-		if (chrome.runtime.lastError) {
-			console.error('Error executing script:', chrome.runtime.lastError);
-		} else {
-			console.log('Script executed successfully:', results);
-			// Save the state for this tab's URL
-			chrome.tabs.get(tabId, (tab) => {
-				const url = new URL(tab.url).hostname;
-				chrome.storage.local.set({[url]: activate}, () => {
-					if (chrome.runtime.lastError) {
-						console.error('Error saving state:', chrome.runtime.lastError);
-					} else {
-						debugStorage('set', url, activate);
-					}
-				});
+	
+	if (activate) {
+		chrome.scripting.insertCSS({ 
+			target: { tabId: tabId, allFrames: true }, 
+			files: ['black-and-white.css']
+		}, function() {
+			if (chrome.runtime.lastError) {
+				console.error('Error inserting CSS:', chrome.runtime.lastError);
+				return;
+			}
+			console.log('CSS inserted successfully');
+			chrome.scripting.executeScript({ 
+				target: { tabId: tabId, allFrames: true }, 
+				func: activateBlackAndWhiteMode
+			}, (results) => {
+				if (chrome.runtime.lastError) {
+					console.error('Error executing script:', chrome.runtime.lastError);
+				} else {
+					console.log('Script executed successfully:', results);
+					// Save the state for this tab's URL
+					chrome.tabs.get(tabId, (tab) => {
+						const url = new URL(tab.url).hostname;
+						chrome.storage.local.set({[url]: activate}, () => {
+							if (chrome.runtime.lastError) {
+								console.error('Error saving state:', chrome.runtime.lastError);
+							} else {
+								debugStorage('set', url, activate);
+							}
+						});
+					});
+				}
 			});
-		}
-	});
+		});
+	} else {
+		chrome.scripting.removeCSS({ 
+			target: { tabId: tabId, allFrames: true }, 
+			files: ['black-and-white.css']
+		}, function() {
+			if (chrome.runtime.lastError) {
+				console.error('Error removing CSS:', chrome.runtime.lastError);
+				return;
+			}
+			console.log('CSS removed successfully');
+			chrome.scripting.executeScript({ 
+				target: { tabId: tabId, allFrames: true }, 
+				func: deactivateBlackAndWhiteMode
+			}, (results) => {
+				if (chrome.runtime.lastError) {
+					console.error('Error executing script:', chrome.runtime.lastError);
+				} else {
+					console.log('Script executed successfully:', results);
+					// Save the state for this tab's URL
+					chrome.tabs.get(tabId, (tab) => {
+						const url = new URL(tab.url).hostname;
+						chrome.storage.local.set({[url]: activate}, () => {
+							if (chrome.runtime.lastError) {
+								console.error('Error saving state:', chrome.runtime.lastError);
+							} else {
+								debugStorage('set', url, activate);
+							}
+						});
+					});
+				}
+			});
+		});
+	}
 }
 
 chrome.action.onClicked.addListener(function(tab) {

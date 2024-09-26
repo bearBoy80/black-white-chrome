@@ -15,6 +15,8 @@
 }
 
 .black-and-white-mode input[type="text"],
+.black-and-white-mode input[type="checkbox"],
+.black-and-white-mode input[type="radio"],
 .black-and-white-mode input[type="search"],
 .black-and-white-mode input[type="submit"],
 .black-and-white-mode input[type="button"],
@@ -42,4 +44,16 @@
     background-color: transparent !important;
     color: black !important;
     border-color: black !important;
+}
+
+html {
+  filter: grayscale(100%) invert(100%);
+  background: #fff;
+}
+
+body {
+  background: #000;
+}
+iframe {
+  filter: invert(100%);
 }
